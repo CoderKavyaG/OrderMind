@@ -1,0 +1,12 @@
+[14/10/24, 10:15:22 AM] Aarav Prints: Hello Vikram, we need to order packaging boxes for our Diwali gift hampers.
+[14/10/24, 10:16:05 AM] Apex Packaging: Hi Aarav! Good to hear from you. How many units are you thinking, and what style?
+[14/10/24, 10:17:40 AM] Aarav Prints: Let's start with 100 units of the rigid top-and-bottom box.
+[14/10/24, 10:18:15 AM] Aarav Prints: Actually wait, our corporate client just expanded their order list. Can we change quantity from 100 to 500 units instead?
+[14/10/24, 10:19:00 AM] Apex Packaging: Absolutely, 500 units gives you much better unit economics too. Dimensions same as last year's festive box?
+[14/10/24, 10:20:12 AM] Aarav Prints: Mostly yes, but can we make it a little taller? Add about 2.5 cm in height so the ceramic jars fit comfortably.
+[14/10/24, 10:21:45 AM] Aarav Prints: For the outer paper and inner tray, keep it same as last time - that dark navy textured kappa board with soft-touch lamination.
+[14/10/24, 10:22:30 AM] Aarav Prints: We also want our logo stamped with metallic gold logo foil right on the lid center. Here is the revised artwork:
+[14/10/24, 10:23:00 AM] Aarav Prints: <attached: diwali_hamper_box_mockup.png>
+[14/10/24, 10:24:10 AM] Aarav Prints: <attached: voice_specs_clarification.m4a>
+[14/10/24, 10:25:05 AM] Apex Packaging: Received both the mockup and the voice note! We'll factor in the extra 2.5cm height and gold hot-stamping. What is your hard deadline?
+[14/10/24, 10:26:30 AM] Aarav Prints: Critical deadline is November 2nd before festive deliveries start. Please confirm earliest production dispatch date.
