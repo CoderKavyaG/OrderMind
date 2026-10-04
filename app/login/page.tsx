@@ -12,9 +12,11 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const from = searchParams.get("from") || "/workspace";
+  const rawFrom = searchParams.get("from");
+  const from =
+    rawFrom && rawFrom.startsWith("/") && !rawFrom.startsWith("//") && !rawFrom.includes(":")
+      ? rawFrom
+      : "/workspace";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
