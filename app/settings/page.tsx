@@ -97,6 +97,84 @@ export default function SettingsPage() {
     }
   };
 
+  const handleAddContact = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newContactName.trim() || !newContactPhone.trim()) return;
+    const newContact: KeyContact = {
+      id: `contact_${Date.now()}`,
+      name: newContactName.trim(),
+      role: newContactRole.trim() || "Operations",
+      phone: newContactPhone.trim(),
+      email: newContactEmail.trim() || "",
+    };
+    const updated = [...contacts, newContact];
+    setContacts(updated);
+    try {
+      localStorage.setItem("ordermind_brain_contacts", JSON.stringify(updated));
+    } catch {}
+    setNewContactName("");
+    setNewContactRole("");
+    setNewContactPhone("");
+    setNewContactEmail("");
+    toast.success("Contact saved successfully");
+  };
+
+  const handleRemoveContact = (id: string) => {
+    const updated = contacts.filter((c) => c.id !== id);
+    setContacts(updated);
+    try {
+      localStorage.setItem("ordermind_brain_contacts", JSON.stringify(updated));
+    } catch {}
+    toast.info("Contact removed");
+  };
+
+  const handleInviteMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail.trim()) return;
+    setInviting(true);
+    try {
+      const res = await fetch("/api/workspace/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: inviteEmail.trim(),
+          name: inviteName.trim() || inviteEmail.split("@")[0],
+          role: inviteRole,
+        }),
+      });
+      if (res.ok) {
+        toast.success(`Member invited: ${inviteEmail}`);
+        setInviteEmail("");
+        setInviteName("");
+        fetchMembers();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to invite member");
+      }
+    } catch {
+      toast.error("Network error inviting member");
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    try {
+      const res = await fetch(`/api/workspace/members?id=${encodeURIComponent(memberId)}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        toast.info("Member access removed");
+        fetchMembers();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to remove member");
+      }
+    } catch {
+      toast.error("Network error removing member");
+    }
+  };
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((res) => res.json())

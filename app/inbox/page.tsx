@@ -237,6 +237,9 @@ function InboxContent() {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      if (selectedConvId) {
+        formData.append("conversationId", selectedConvId);
+      }
 
       const res = await fetch("/api/attachments/upload", {
         method: "POST",

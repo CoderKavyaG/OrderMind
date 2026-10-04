@@ -408,7 +408,7 @@ export default function CustomersPage() {
                           Lifetime Revenue
                         </span>
                         <span className="font-bold text-slate-900">
-                          ₹{((client as any).lifetimeValue || 450000).toLocaleString("en-IN")}
+                          ₹{((client as any).lifetimeValue ?? 0).toLocaleString("en-IN")}
                         </span>
                       </div>
                       <div>
@@ -416,7 +416,7 @@ export default function CustomersPage() {
                           Orders Run
                         </span>
                         <span className="font-bold text-slate-900">
-                          {(client as any).orderCount || 4} Orders
+                          {((client as any).orderCount ?? 0)} Orders
                         </span>
                       </div>
                     </div>

@@ -33,6 +33,7 @@ import {
   Mail,
   Instagram,
   Package,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -48,6 +49,9 @@ interface SelectedInspectorClient {
   quantity: string;
   dimensions: string;
   material: string;
+  phone?: string;
+  email?: string;
+  instagram?: string;
   orderId?: string;
   conversationId?: string;
   documents: Array<{ name: string; type: string; badge: string; url?: string }>;
@@ -257,6 +261,63 @@ export default function WorkspaceHomePage() {
       setIsEditingSpecs(false);
     }
   }, [selectedInspector]);
+
+  // Custom Packaging Tasks State
+  const [createTaskModalOpen, setCreateTaskModalOpen] = React.useState(false);
+  const [newTaskTitle, setNewTaskTitle] = React.useState("");
+  const [newTaskClientId, setNewTaskClientId] = React.useState("");
+  const [newTaskType, setNewTaskType] = React.useState<string>("production");
+  const [newTaskDue, setNewTaskDue] = React.useState("");
+  const [isSubmittingTask, setIsSubmittingTask] = React.useState(false);
+  const [availableClients, setAvailableClients] = React.useState<Array<{ id: string; name: string; company?: string }>>([]);
+
+  React.useEffect(() => {
+    fetch("/api/clients")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.clients) setAvailableClients(d.clients);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleCreateCustomTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTaskTitle.trim()) {
+      toast.error("Please enter a task title");
+      return;
+    }
+
+    setIsSubmittingTask(true);
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newTaskTitle.trim(),
+          type: newTaskType,
+          clientId: newTaskClientId || undefined,
+          dueAt: newTaskDue ? new Date(newTaskDue).toISOString() : new Date().toISOString(),
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to create task");
+      }
+
+      toast.success("Packaging task added to your daily schedule!");
+      setCreateTaskModalOpen(false);
+      setNewTaskTitle("");
+      setNewTaskClientId("");
+      setNewTaskType("production");
+      setNewTaskDue("");
+      await fetchDashboardData();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to create task");
+    } finally {
+      setIsSubmittingTask(false);
+    }
+  };
 
   const fetchDashboardData = React.useCallback(async () => {
     try {
@@ -501,9 +562,13 @@ export default function WorkspaceHomePage() {
               className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-xs text-xs font-mono font-bold text-slate-900 whitespace-nowrap transition cursor-pointer"
               title="View all production orders"
             >
-              <span>{data?.pipelineStats?.totalActive || 6}</span>
+              <span>{data?.pipelineStats?.totalActive ?? 0}</span>
               <span className="text-slate-500 font-sans font-medium text-[11px]">Orders</span>
-              <span className="text-emerald-600 bg-emerald-50 px-1 rounded text-[9px]">+3</span>
+              {(data?.pipelineStats?.totalActive ?? 0) > 0 && (
+                <span className="text-emerald-600 bg-emerald-50 px-1 rounded text-[9px] font-mono font-bold">
+                  +{data?.pipelineStats?.totalActive}
+                </span>
+              )}
             </button>
 
             <button
@@ -511,9 +576,13 @@ export default function WorkspaceHomePage() {
               className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-xs text-xs font-mono font-bold text-slate-900 whitespace-nowrap transition cursor-pointer"
               title="View confirmed production-ready orders"
             >
-              <span>{data?.pipelineStats?.totalConfirmed || 2}</span>
+              <span>{data?.pipelineStats?.totalConfirmed ?? 0}</span>
               <span className="text-slate-500 font-sans font-medium text-[11px]">Confirmed</span>
-              <span className="text-emerald-600 bg-emerald-50 px-1 rounded text-[9px]">+2</span>
+              {(data?.pipelineStats?.totalConfirmed ?? 0) > 0 && (
+                <span className="text-emerald-600 bg-emerald-50 px-1 rounded text-[9px] font-mono font-bold">
+                  +{data?.pipelineStats?.totalConfirmed}
+                </span>
+              )}
             </button>
 
             <button
@@ -521,9 +590,13 @@ export default function WorkspaceHomePage() {
               className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-xs text-xs font-mono font-bold text-slate-900 whitespace-nowrap transition cursor-pointer"
               title="View orders needing operator review"
             >
-              <span>{data?.needsAttentionQueue?.length || 2}</span>
+              <span>{data?.needsAttentionQueue?.length ?? 0}</span>
               <span className="text-slate-500 font-sans font-medium text-[11px]">Review</span>
-              <span className="text-amber-600 bg-amber-50 px-1 rounded text-[9px]">!1</span>
+              {(data?.needsAttentionQueue?.length ?? 0) > 0 && (
+                <span className="text-amber-600 bg-amber-50 px-1 rounded text-[9px] font-mono font-bold">
+                  !{data?.needsAttentionQueue?.length}
+                </span>
+              )}
             </button>
 
             <button
@@ -547,9 +620,11 @@ export default function WorkspaceHomePage() {
 
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-slate-200 shadow-xs text-xs font-bold text-slate-900 whitespace-nowrap">
               <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-slate-950 text-white text-[8px] sm:text-[9px] font-bold flex items-center justify-center">
-                IK
+                {((data as any)?.workspaceName || "WS").slice(0, 2).toUpperCase()}
               </div>
-              <span className="text-[10px] sm:text-[11px] truncate max-w-[100px] sm:max-w-[130px]">InTheBox Studio</span>
+              <span className="text-[10px] sm:text-[11px] truncate max-w-[100px] sm:max-w-[130px]">
+                {(data as any)?.workspaceName || "Workspace"}
+              </span>
             </div>
           </div>
         </div>
@@ -912,13 +987,27 @@ export default function WorkspaceHomePage() {
             {/* --------------------------------------------------------------------- */}
             <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-soft space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-base font-bold font-display text-slate-900">
                     Your Day&apos;s Packaging Tasks
                   </h2>
                   <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono text-[11px] font-bold">
                     {urgentTasks.length} Tasks
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewTaskTitle("");
+                      setNewTaskClientId("");
+                      setNewTaskType("production");
+                      setNewTaskDue("");
+                      setCreateTaskModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-950 hover:bg-slate-800 text-white font-bold text-xs shadow-tactile transition cursor-pointer ml-1"
+                  >
+                    <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                    <span>+ Add Task</span>
+                  </button>
                 </div>
 
                 {/* Filters */}
@@ -953,12 +1042,26 @@ export default function WorkspaceHomePage() {
               {/* Task Cards Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {urgentTasks.length === 0 ? (
-                  <div className="col-span-full p-8 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 space-y-2">
+                  <div className="col-span-full p-8 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 space-y-3">
                     <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
                     <div className="font-bold text-xs text-slate-800">No pending packaging tasks</div>
                     <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-                      All orders and customer tasks are up to date. Direct orders or imported conversations requiring review will appear here automatically.
+                      All orders and customer tasks are up to date. You can add custom packaging tasks, QC checkpoints, sample reviews, or follow-ups.
                     </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewTaskTitle("");
+                        setNewTaskClientId("");
+                        setNewTaskType("production");
+                        setNewTaskDue("");
+                        setCreateTaskModalOpen(true);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-950 hover:bg-slate-800 text-white text-xs font-bold shadow-tactile transition cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                      <span>+ Add Packaging Task</span>
+                    </button>
                   </div>
                 ) : (
                   urgentTasks.map((task) => {
@@ -980,15 +1083,26 @@ export default function WorkspaceHomePage() {
                       >
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-slate-900 text-white font-bold text-xs flex items-center justify-center font-display">
+                            <Link
+                              href={task.orderId ? `/orders/${task.orderId}` : `/customers?search=${encodeURIComponent(task.clientName)}`}
+                              className="flex items-center gap-2 group hover:opacity-80 transition cursor-pointer"
+                              title={`View ${task.clientName}`}
+                            >
+                              <div className="w-8 h-8 rounded-full bg-slate-900 group-hover:bg-brand-lime group-hover:text-slate-950 text-white font-bold text-xs flex items-center justify-center font-display transition-colors">
                                 {task.clientName.slice(0, 2).toUpperCase()}
                               </div>
                               <div>
-                                <div className="font-bold text-xs text-slate-900">{task.clientName}</div>
-                                <div className="text-[10px] text-slate-500 font-medium">Order #{task.orderNumber}</div>
+                                <div className="font-bold text-xs text-slate-900 group-hover:underline flex items-center gap-1">
+                                  <span>{task.clientName}</span>
+                                  <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-slate-900 inline" />
+                                </div>
+                                <div className="text-[10px] text-slate-500 font-medium">
+                                  {task.orderNumber && task.orderNumber !== "Task" && task.orderNumber !== "N/A"
+                                    ? `Order #${task.orderNumber}`
+                                    : "Client Profile"}
+                                </div>
                               </div>
-                            </div>
+                            </Link>
                             <div className="flex items-center gap-1 text-slate-500">
                               <button
                                 type="button"
@@ -1046,12 +1160,26 @@ export default function WorkspaceHomePage() {
                                 onClick={() => {
                                   setCompletedTaskIds((prev) => {
                                     const next = new Set(prev);
+                                    const willBeDone = !next.has(task.id);
                                     if (next.has(task.id)) {
                                       next.delete(task.id);
                                       toast.info("Task marked in progress");
                                     } else {
                                       next.add(task.id);
                                       toast.success("Task completed!");
+                                    }
+                                    if (
+                                      task.id &&
+                                      !task.id.startsWith("overdue-") &&
+                                      !task.id.startsWith("conflict-") &&
+                                      !task.id.startsWith("missing-") &&
+                                      !task.id.startsWith("advance-")
+                                    ) {
+                                      fetch("/api/tasks", {
+                                        method: "PATCH",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ taskId: task.id, done: willBeDone }),
+                                      }).catch(() => {});
                                     }
                                     return next;
                                   });
@@ -1108,7 +1236,6 @@ export default function WorkspaceHomePage() {
 
 
               </div>
-            </div>
             </div>
           </div>
 
@@ -1449,28 +1576,7 @@ export default function WorkspaceHomePage() {
               </button>
             </div>
 
-            {/* 1-Click Samples */}
-            <div className="space-y-2">
-              <span className="text-xs font-mono font-bold text-slate-700 uppercase block">
-                ⚡ 1-Click Test Scenarios:
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {sampleChats.map((s, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      setPastedChat(s.text);
-                      setIngestingClientName(s.client);
-                      toast.info(`Loaded scenario: ${s.client}`);
-                    }}
-                    className="p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-left text-xs font-medium text-slate-800 transition truncate"
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+
 
             {/* Form */}
             <div className="space-y-4 text-xs font-mono">
@@ -1595,7 +1701,7 @@ export default function WorkspaceHomePage() {
                         ...prev,
                         clientName: c.name,
                         company: c.company,
-                        phone: c.phone || "",
+                        phone: (c as any).phone || "",
                         orderId: c.orderId || "",
                       }));
                       toast.info(`Filled details for ${c.name} (${c.company})`);
@@ -1657,8 +1763,8 @@ export default function WorkspaceHomePage() {
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                   {[
-                    { label: "+1 Min (Test Alert)", mins: 1 },
                     { label: "+15 Mins", mins: 15 },
+                    { label: "+30 Mins", mins: 30 },
                     { label: "+1 Hour", mins: 60 },
                     { label: "+24 Hours", mins: 1440 },
                   ].map((preset) => (
@@ -1845,7 +1951,7 @@ export default function WorkspaceHomePage() {
               </span>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { label: "+1 Min (Test Alert)", mins: 1 },
+                  { label: "Today at 5:00 PM IST", mins: 120 },
                   { label: "Tomorrow at 11:00 AM IST", mins: 1440 },
                   { label: "Tomorrow at 3:30 PM IST", mins: 1710 },
                   { label: "Next Monday at 2:00 PM IST", mins: 4320 },
@@ -1948,6 +2054,178 @@ export default function WorkspaceHomePage() {
                 <span>Confirm Reschedule</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 5b. ADD PACKAGING / CUSTOM TASK MODAL                                     */}
+      {/* ========================================================================= */}
+      {createTaskModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 animate-in fade-in-0 zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-brand-lime text-slate-950 font-bold flex items-center justify-center shadow-sm">
+                  <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
+                </div>
+                <div>
+                  <h3 className="font-display font-black text-lg text-slate-900">
+                    Add Packaging Task
+                  </h3>
+                  <p className="text-xs text-slate-500 font-sans">
+                    Schedule a task for a customer or general packaging shop operations.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCreateTaskModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Quick Task Suggestions */}
+            <div className="space-y-1.5 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+              <div className="text-[11px] font-bold text-slate-600 uppercase font-mono">
+                ⚡ Quick Templates:
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { title: "Send GSM paper swatch samples", type: "production" },
+                  { title: "Follow-up on foiling die & artwork approval", type: "approval" },
+                  { title: "Quality inspection on folded cartons", type: "production" },
+                  { title: "Collect 50% advance token payment", type: "payment" },
+                  { title: "Dispatch sample box via courier", type: "deadline" },
+                ].map((preset) => (
+                  <button
+                    key={preset.title}
+                    type="button"
+                    onClick={() => {
+                      setNewTaskTitle(preset.title);
+                      setNewTaskType(preset.type);
+                    }}
+                    className="px-2.5 py-1 rounded-full bg-white hover:bg-slate-200 border border-slate-200 text-slate-800 text-[11px] font-medium transition cursor-pointer"
+                  >
+                    + {preset.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <form onSubmit={handleCreateCustomTask} className="space-y-4 text-xs font-mono">
+              <div>
+                <label className="text-slate-700 block font-bold mb-1">
+                  Task Title / Action Item *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  placeholder="e.g. Inspect rigid box magnetic closure samples..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 font-sans text-xs focus:ring-2 focus:ring-slate-900 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-700 block font-bold mb-1">
+                  Associate with Client / Company
+                </label>
+                <select
+                  value={newTaskClientId}
+                  onChange={(e) => setNewTaskClientId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 font-sans text-xs focus:ring-2 focus:ring-slate-900 outline-none cursor-pointer"
+                >
+                  <option value="">-- General Packaging Operation (No Specific Client) --</option>
+                  {availableClients.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} {c.company ? `(${c.company})` : ""}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-400 font-sans mt-1">
+                  Optionally link this task to a client profile to track all tasks together.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-700 block font-bold mb-1">
+                    Category / Stage
+                  </label>
+                  <select
+                    value={newTaskType}
+                    onChange={(e) => setNewTaskType(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 font-sans text-xs focus:ring-2 focus:ring-slate-900 outline-none cursor-pointer"
+                  >
+                    <option value="production">Production & QC</option>
+                    <option value="deadline">Delivery Deadline</option>
+                    <option value="approval">Artwork / Spec Approval</option>
+                    <option value="followup">Customer Follow-up</option>
+                    <option value="payment">Advance / Payment</option>
+                    <option value="consultation">Consultation & Sampling</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-slate-700 block font-bold mb-1">
+                    Due Date
+                  </label>
+                  <input
+                    type="date"
+                    value={newTaskDue}
+                    onChange={(e) => setNewTaskDue(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 font-sans text-xs focus:ring-2 focus:ring-slate-900 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 pt-1">
+                <span className="text-[10px] text-slate-400 font-bold uppercase font-mono mr-1">Quick Due:</span>
+                {[
+                  { label: "Today", days: 0 },
+                  { label: "Tomorrow", days: 1 },
+                  { label: "In 3 Days", days: 3 },
+                  { label: "Next Week", days: 7 },
+                ].map((q) => (
+                  <button
+                    key={q.label}
+                    type="button"
+                    onClick={() => {
+                      const d = new Date(Date.now() + q.days * 86400000);
+                      const yr = d.getFullYear();
+                      const mo = String(d.getMonth() + 1).padStart(2, "0");
+                      const da = String(d.getDate()).padStart(2, "0");
+                      setNewTaskDue(`${yr}-${mo}-${da}`);
+                    }}
+                    className="px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-mono cursor-pointer"
+                  >
+                    {q.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setCreateTaskModalOpen(false)}
+                  className="px-4 py-2 rounded-full border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingTask || !newTaskTitle.trim()}
+                  className="px-6 py-2.5 rounded-full bg-brand-lime hover:bg-brand-limeHover border border-[#BDE82B] text-slate-950 font-bold text-xs shadow-tactile flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                >
+                  <Check className="w-4 h-4 stroke-[2.5]" />
+                  <span>{isSubmittingTask ? "Adding..." : "+ Add Packaging Task"}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

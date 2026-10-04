@@ -90,6 +90,7 @@ async function callGemma(system: string, prompt: string): Promise<string> {
         ],
         response_format: { type: "json_object" },
         temperature: 0.1,
+        max_tokens: 1024,
       };
 
   const res = await fetch(endpoint, {
@@ -175,7 +176,7 @@ async function main() {
   const start2 = Date.now();
   try {
     const raw = await callGemma(
-      "Extract packaging order specification. Output JSON with {field, value, quote}.",
+      "Extract packaging order specification. You must return a single JSON object with exact keys 'field', 'value', and 'quote'. Example: {\"field\": \"quantity\", \"value\": \"1200\", \"quote\": \"1200 boxes\"}",
       "Namaste, humein 1200 boxes chahiye corrugated mailer standard Kraft board mein."
     );
     const parsed = testSchema.parse(JSON.parse(raw));
