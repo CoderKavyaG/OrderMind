@@ -6,6 +6,24 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  experimental: {
+    // Limits thread count to conserve memory on cloud container builds (e.g. Render)
+    cpus: 1,
+    workerThreads: false,
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Fallback for node built-ins in browser context
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        crypto: false,
+      };
+    }
+    return config;
+  },
   async headers() {
     return [
       {
@@ -43,9 +61,8 @@ const isSentryConfigured = Boolean(
 
 export default isSentryConfigured
   ? withSentryConfig(nextConfig, {
-      // Sentry Build Options
-      org: process.env.SENTRY_ORG,
-      project: process.env.SENTRY_PROJECT,
+      org: process.env.SENTRY_ORG || "goelsahhab-workspace",
+      project: process.env.SENTRY_PROJECT || "javascript-nextjs",
       silent: true,
       widenClientFileUpload: true,
       hideSourceMaps: true,

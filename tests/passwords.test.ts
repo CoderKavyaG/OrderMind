@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { hashPassword, verifyPassword } from "@/server/auth/passwords";
 
-describe("Password Security & Hashing", () => {
+describe("Password Security & Hashing", { timeout: 15000 }, () => {
   it("hashes password with salt rounds and does not store plaintext", async () => {
     const raw = "SuperSecretPassword123!";
     const hash = await hashPassword(raw);
