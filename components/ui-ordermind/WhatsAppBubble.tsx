@@ -89,19 +89,36 @@ export function WhatsAppBubble({
               if (att.type === "image" && att.url) {
                 return (
                   <div key={att.id} className="rounded-xl overflow-hidden border border-[#E0DCD2] bg-[#FAF8F5]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={att.url}
-                      alt={att.name}
-                      className="w-full max-h-56 object-cover"
-                      loading="lazy"
-                    />
+                    <a
+                      href={att.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block group relative cursor-pointer"
+                      title="Click to open image full-size"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={att.url}
+                        alt={att.name}
+                        className="w-full max-h-56 object-cover transition group-hover:opacity-95"
+                        loading="lazy"
+                      />
+                    </a>
                     <div className="p-1.5 px-2 text-[10px] flex items-center justify-between bg-white text-ink">
-                      <span className="truncate max-w-[180px] font-medium">{att.name}</span>
+                      <a
+                        href={att.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="truncate max-w-[180px] font-medium hover:underline"
+                        title="Open in new tab"
+                      >
+                        {att.name}
+                      </a>
                       <a
                         href={att.url}
                         download={att.name}
                         className="p-1 text-ink-muted hover:text-ink transition"
+                        title="Download"
                       >
                         <Download className="w-3 h-3" />
                       </a>
@@ -111,9 +128,13 @@ export function WhatsAppBubble({
               }
 
               return (
-                <div
+                <a
                   key={att.id}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-body-xs font-medium border border-[#E0DCD2] text-ink shadow-xs"
+                  href={att.url || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-body-xs font-medium border border-[#E0DCD2] text-ink shadow-xs hover:bg-[#FAF8F5] transition cursor-pointer"
+                  title="Click to open attachment"
                 >
                   {att.type === "pdf" ? (
                     <FileText className="w-3.5 h-3.5 text-[#D64545]" />
@@ -124,7 +145,7 @@ export function WhatsAppBubble({
                   {att.size && (
                     <span className="text-[10px] text-ink-subtle font-mono">{att.size}</span>
                   )}
-                </div>
+                </a>
               );
             })}
           </div>

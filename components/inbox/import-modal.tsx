@@ -346,59 +346,24 @@ export function ImportModal({
                 </label>
               </div>
 
-              {/* Quick Preset Scenarios */}
-              <div className="space-y-1.5 p-3 rounded-lg bg-muted/30 border border-border">
-                <span className="text-[10px] font-mono font-bold text-foreground/80 uppercase block">
-                  ⚡ 1-Click WhatsApp Test Scenarios:
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRawText(`[10/24/26, 10:15 AM] Aarav Patel: Hi Ishan, we need custom rigid gift boxes for our new festive perfume collection.
-[10/24/26, 10:16 AM] Aarav Patel: Let's start with 100 boxes. Dimensions: 220x150x65 mm. Use 350 GSM White SBS board with gold foil logo stamping.
-[10/24/26, 11:30 AM] Aarav Patel: <attached: voice_note_01.mp3> Ishan bhai, actually please increase the quantity from 100 to 500 boxes! Also make it 5mm taller (70mm) so the glass dropper fits smoothly.
-[10/24/26, 2:45 PM] Aarav Patel: For the outer board, use same material as last time (we liked the 300 GSM Matte texture from batch ORD-0099).
-[10/24/26, 4:20 PM] Aarav Patel: Please deliver by next Friday November 14th without delay.`);
-                      setChatTitle("Aarav Cosmetics Rigid Gift Box Launch");
-                    }}
-                    className="px-2.5 py-1 rounded-md bg-card border border-border hover:bg-muted text-[11px] font-medium text-foreground transition"
-                  >
-                    Aarav Cosmetics (Rigid Box + Voice Delta)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRawText(`[10/23/26, 09:30 AM] Rajesh Mehta: Namaste Ishan ji, humein 500 corrugated mailer boxes chahiye e-commerce shipping ke liye.
-[10/23/26, 09:32 AM] Rajesh Mehta: Size hoga 250x180x80 mm, 3-ply E-flute kraft board, black soy ink printing. Purely eco-friendly varnish chahiye.
-[10/23/26, 02:15 PM] Rajesh Mehta: <attached: voice_neft.mp3> Advance payment of Rs 45,000 transfer kar diya hai NEFT se. Design approval bhi lock kar di hai. Production press schedule mein daal dijiye please.
-[10/23/26, 05:00 PM] Rajesh Mehta: Target delivery deadline is November 10th for the wellness festival.`);
-                      setChatTitle("Mehta Naturals Corrugated Mailers");
-                    }}
-                    className="px-2.5 py-1 rounded-md bg-card border border-border hover:bg-muted text-[11px] font-medium text-foreground transition"
-                  >
-                    Mehta Naturals (Hinglish + Advance NEFT)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRawText(`[10/25/26, 11:00 AM] Vikram Singhania: Need 1,200 festive Mithai presentation boxes for Diwali corporate hampers. 2mm Kappa greyboard with gold foil and satin ribbon.
-[10/25/26, 01:20 PM] Vikram Singhania: Dimensions should be 280 x 200 x 55 mm with food-grade barrier liner inside.
-[10/25/26, 03:40 PM] Vikram Singhania: Quote looks solid at ₹240/unit. Sending PO shortly.`);
-                      setChatTitle("Saffron Luxe Diwali Mithai Boxes");
-                    }}
-                    className="px-2.5 py-1 rounded-md bg-card border border-border hover:bg-muted text-[11px] font-medium text-foreground transition"
-                  >
-                    Saffron Luxe (Diwali Hamper Box)
-                  </button>
+              {/* Meta & WhatsApp Cloud Compliance Note */}
+              <div className="p-3 rounded-lg bg-muted/30 border border-border flex items-start gap-2.5">
+                <FileText className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                <div className="space-y-0.5 text-[11px] leading-relaxed">
+                  <span className="font-semibold text-foreground block">
+                    WhatsApp Chat Export Ingestion (Ready for Meta API Integration)
+                  </span>
+                  <p className="text-muted-foreground">
+                    Import WhatsApp conversational threads (.txt) exported from mobile or web. Formatted for commercial packaging intake, audio transcripts, and automated claim extraction via Gemma AI.
+                  </p>
                 </div>
               </div>
 
               <textarea
-                rows={9}
+                rows={10}
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
-                placeholder={`Paste your chat export here. Supported formats:\n[14/10/24, 2:30:15 PM] Aarav Prints: Hi, can we change quantity from 100 to 500?\n14/10/24, 2:30 pm - Aarav Prints: Make it 15cm taller with gold foil logo\n[2024-10-14 14:31:00] Business: Noted, here is the modified artwork\n<attached: box_mockup.png>`}
+                placeholder={`Paste customer chat transcript here. Supported formats:\n[14/10/26, 2:30:15 PM] Customer Name: Hi, we need custom rigid boxes for our products.\n14/10/26, 2:32 pm - Customer Name: 500 units, 120x80x45 mm, 350 GSM SBS board with matte lamination.\n[2026-10-14 14:35:00] Business: Acknowledged, generating production proof.\n<attached: proof_drawing.pdf>`}
                 className="w-full p-3 font-mono text-[11px] rounded-lg bg-input/20 border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-primary leading-relaxed"
               />
 

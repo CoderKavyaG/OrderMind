@@ -137,9 +137,9 @@ export default function OrderWorkspacePage() {
   // Upload attachment state
   const [uploading, setUploading] = useState(false);
 
-  const fetchOrder = useCallback(async () => {
+  const fetchOrder = useCallback(async (showLoader = true) => {
     try {
-      setLoading(true);
+      if (showLoader) setLoading(true);
       const res = await fetch(`/api/orders/${orderId}`);
       const data = await res.json();
       if (!res.ok) {
@@ -161,7 +161,7 @@ export default function OrderWorkspacePage() {
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error loading order workspace");
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   }, [orderId]);
 
@@ -519,21 +519,28 @@ export default function OrderWorkspacePage() {
     e.preventDefault();
     if (!answeringClarification || !customerReplyText.trim()) return;
     setSubmittingAction(true);
+    const clarId = answeringClarification.id;
+    const reply = customerReplyText.trim();
     try {
+      const targetOrderId = orderData?.id || orderId;
       const res = await fetch(
-        `/api/orders/${orderId}/clarifications/${answeringClarification.id}/answer`,
+        `/api/orders/${targetOrderId}/clarifications/${clarId}/answer`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ replyText: customerReplyText.trim() }),
+          body: JSON.stringify({ replyText: reply }),
         }
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to process customer reply");
-      setOrderData(data.order);
+      
       setAnsweringClarification(null);
       setCustomerReplyText("");
+      if (data.order) {
+        setOrderData(data.order);
+      }
       toast.success("Customer reply processed into order events!");
+      await fetchOrder(false);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to record customer reply");
     } finally {
@@ -707,17 +714,34 @@ export default function OrderWorkspacePage() {
 
               {/* Actions */}
               <div className="flex flex-wrap items-center gap-2.5">
-                {canConfirmAll && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleConfirmAll}
-                    disabled={submittingAction}
-                    className="rounded-full shadow-tactile text-xs font-semibold gap-1.5"
-                  >
-                    <Lock className="w-3.5 h-3.5" />
-                    <span>Lock &amp; Confirm Order</span>
-                  </Button>
+                {!isConfirmed && (
+                  canConfirmAll ? (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleConfirmAll}
+                      disabled={submittingAction}
+                      className="rounded-full shadow-tactile text-xs font-semibold gap-1.5 bg-brand-lime text-slate-950 hover:bg-brand-limeHover"
+                    >
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Lock &amp; Confirm Order</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled
+                      className="rounded-full text-xs font-semibold gap-1.5 bg-surface-muted text-ink-subtle border-border opacity-70 cursor-not-allowed font-mono"
+                      title="All required specifications must be verified and confirmed without missing fields or conflicts"
+                    >
+                      <Lock className="w-3.5 h-3.5 text-ink-subtle" />
+                      <span>
+                        Lock Order ({reducedState.missingFields.length} missing
+                        {reducedState.conflictingCount > 0 ? `, ${reducedState.conflictingCount} conflict` : ""}
+                        {reducedState.inferredCount > 0 ? `, ${reducedState.inferredCount} inferred` : ""})
+                      </span>
+                    </Button>
+                  )
                 )}
 
                 {isConfirmed ? (
@@ -732,16 +756,17 @@ export default function OrderWorkspacePage() {
                     </Button>
                   </Link>
                 ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled
-                    className="rounded-full text-xs font-semibold gap-1.5 bg-surface-muted text-ink-subtle border-border opacity-70 cursor-not-allowed"
-                    title="Brief is blocked until all required specifications are confirmed without missing fields or conflicts"
-                  >
-                    <Lock className="w-3.5 h-3.5 text-ink-subtle" />
-                    <span>Generate Production Brief (Locked)</span>
-                  </Button>
+                  <Link href={`/orders/${orderId}/brief`}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full text-xs font-semibold gap-1.5 bg-surface-muted hover:bg-surface text-ink-subtle hover:text-ink border-border"
+                      title="Click to view Production Brief checklist and requirement status"
+                    >
+                      <Lock className="w-3.5 h-3.5 text-ink-subtle" />
+                      <span>Production Brief (Locked &bull; View Checklist)</span>
+                    </Button>
+                  </Link>
                 )}
               </div>
             </div>
@@ -1253,30 +1278,50 @@ export default function OrderWorkspacePage() {
                     Attached Files ({orderData.attachments.length})
                   </div>
                   <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                    {orderData.attachments.map((att) => (
-                      <div
-                        key={att.id}
-                        className="p-2.5 rounded-xl bg-canvas border border-border flex items-center justify-between gap-3 text-xs"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <File className="w-4 h-4 text-brand-lime shrink-0" />
-                          <div className="truncate">
-                            <p className="font-semibold text-ink truncate">{att.filename}</p>
-                            <p className="text-[10px] text-ink-muted">
-                              {(att.size / 1024).toFixed(1)} KB • {att.contentType}
-                            </p>
-                          </div>
-                        </div>
-                        <a
-                          href={att.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-2.5 py-1 rounded bg-surface border border-border text-[11px] font-semibold text-ink hover:bg-surface-muted transition shrink-0"
+                    {orderData.attachments.map((att) => {
+                      const isImg = att.contentType?.startsWith("image/") || att.filename.match(/\.(png|jpg|jpeg|webp)$/i);
+                      return (
+                        <div
+                          key={att.id}
+                          className="p-2 rounded-xl bg-canvas border border-border flex items-center justify-between gap-3 text-xs"
                         >
-                          View / Download
-                        </a>
-                      </div>
-                    ))}
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            {isImg ? (
+                              <a
+                                href={att.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block w-9 h-9 rounded-lg overflow-hidden border border-border bg-white flex-shrink-0 group cursor-pointer"
+                                title="Click to view image"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={att.url}
+                                  alt={att.filename}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition"
+                                />
+                              </a>
+                            ) : (
+                              <File className="w-4 h-4 text-brand-lime shrink-0" />
+                            )}
+                            <div className="truncate">
+                              <p className="font-semibold text-ink truncate">{att.filename}</p>
+                              <p className="text-[10px] text-ink-muted font-mono">
+                                {(att.size / 1024).toFixed(1)} KB &bull; {att.contentType}
+                              </p>
+                            </div>
+                          </div>
+                          <a
+                            href={att.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2.5 py-1 rounded bg-surface border border-border text-[11px] font-semibold text-ink hover:bg-surface-muted transition shrink-0"
+                          >
+                            Open File
+                          </a>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -1516,9 +1561,17 @@ export default function OrderWorkspacePage() {
                   </Button>
                   <Button
                     type="submit"
-                    className="text-xs font-semibold bg-brand-lime hover:bg-brand-limeHover text-ink"
+                    disabled={submittingAction || !customerReplyText.trim()}
+                    className="text-xs font-semibold bg-brand-lime hover:bg-brand-limeHover text-ink disabled:opacity-50 min-w-[120px]"
                   >
-                    Process Reply
+                    {submittingAction ? (
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-3.5 h-3.5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+                        Processing...
+                      </span>
+                    ) : (
+                      "Process Reply"
+                    )}
                   </Button>
                 </div>
               </form>

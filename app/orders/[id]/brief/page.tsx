@@ -20,6 +20,7 @@ import {
   Lock,
   FileCheck,
   Building2,
+  File,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { ProductionBriefWithMeta } from "@/server/services/productionBrief.service";
@@ -49,6 +50,17 @@ export default function ProductionBriefPage() {
 
       if (ordRes.ok) {
         setOrder(ordData.order);
+        if (ordData.order?.status === "CONFIRMED" && !briefData?.brief) {
+          try {
+            const genRes = await fetch(`/api/orders/${orderId}/brief`, { method: "POST" });
+            const genData = await genRes.json();
+            if (genRes.ok && genData.brief) {
+              setBrief(genData.brief);
+            }
+          } catch {
+            // User can still trigger manually
+          }
+        }
       }
       if (briefRes.ok && briefData.brief) {
         setBrief(briefData.brief);
@@ -416,6 +428,50 @@ ${c.footer}
                 {brief.content.specialInstructions || "Standard die-cut testing and 100% QA check before palletizing."}
               </div>
             </div>
+
+            {/* Reference Files & Artwork Thumbnails */}
+            {((order?.attachments && order.attachments.length > 0) || (brief.content.referenceFiles && brief.content.referenceFiles.length > 0)) && (
+              <div className="space-y-2 pt-1 print:break-inside-avoid">
+                <h2 className="text-body-xs font-mono font-bold uppercase tracking-wider text-ink-muted print:text-gray-700">
+                  Reference Files, Artwork &amp; Dielines
+                </h2>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {(order?.attachments || []).map((att) => {
+                    const isImg = att.contentType?.startsWith("image/") || att.filename.match(/\.(png|jpg|jpeg|webp)$/i);
+                    return (
+                      <a
+                        key={att.id}
+                        href={att.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-xl border border-border print:border-gray-300 bg-surface-muted/20 hover:bg-surface-muted/40 transition flex flex-col items-center text-center gap-1.5 group"
+                      >
+                        {isImg ? (
+                          <div className="w-full h-20 rounded-lg overflow-hidden border border-border print:border-gray-300 bg-white">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={att.url}
+                              alt={att.filename}
+                              className="w-full h-full object-cover group-hover:scale-105 transition"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-full h-20 rounded-lg border border-border print:border-gray-300 bg-white flex items-center justify-center text-ink-muted">
+                            <File className="w-6 h-6 text-brand-lime" />
+                          </div>
+                        )}
+                        <span className="text-[11px] font-medium text-ink print:text-black truncate w-full">
+                          {att.filename}
+                        </span>
+                        <span className="text-[9px] text-ink-subtle print:text-gray-500 font-mono">
+                          {(att.size / 1024).toFixed(0)} KB &bull; Open
+                        </span>
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Quality Sign-off Blocks */}
             <div className="pt-6 border-t border-border print:border-gray-400 grid grid-cols-3 gap-4 text-center text-body-xs">

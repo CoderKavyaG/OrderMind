@@ -316,64 +316,13 @@ export function StoryPageView({ isPreview = false }: StoryPageViewProps) {
           </div>
         </section>
 
-        {/* SECTION 5: HOW WE BUILT IT (REAL PHASES & NUMBERS) */}
-        <section className="space-y-6">
-          <div className="border-b border-border pb-4">
-            <span className="text-body-xs font-mono font-bold uppercase tracking-wider text-brand-limeDark block">
-              Section 05 &bull; Real Build Log & Repository Facts
-            </span>
-            <h2 className="font-display text-heading-lg sm:text-display-md font-bold text-ink tracking-tight mt-1">
-              How we built it: Phase by phase.
-            </h2>
-            <p className="text-body-sm text-ink-muted mt-1 font-sans">
-              All numbers and milestones read directly from repository tests and architecture invariants. Zero fabricated claims.
-            </p>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {config.buildLogTimeline.map((step, idx) => {
-              const descBlock = getStoryBlock(step.descriptionBlockId, isPreview);
-              if (!descBlock && !isPreview) return null;
-
-              return (
-                <div
-                  key={idx}
-                  className="p-5 rounded-card bg-surface border border-border shadow-soft flex flex-col justify-between space-y-3"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-body-xs font-mono font-bold text-brand-limeDark">
-                        {step.phase}
-                      </span>
-                      <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-surface-muted border border-border text-ink-muted">
-                        {step.stat}
-                      </span>
-                    </div>
-                    <h4 className="font-display font-bold text-body-base text-ink">
-                      {step.name}
-                    </h4>
-                    {descBlock && (
-                      <p className="text-body-xs text-ink-muted leading-relaxed font-sans">
-                        {descBlock.text}
-                      </p>
-                    )}
-                  </div>
-                  {isPreview && descBlock && !descBlock.verified && (
-                    <span className="text-[9px] font-mono bg-amber-200 text-amber-900 px-1 py-0.5 rounded font-bold self-start">
-                      Unverified
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
 
         {/* SECTION 6: AFTER HE TRIED IT (RENDER ONLY IF VERIFIED) */}
         {config.afterTriedItReaction && (isPreview || config.afterTriedItReaction.verified) && (
           <section className="p-8 rounded-card-lg bg-surface border border-border shadow-soft space-y-4">
             <span className="text-body-xs font-mono font-bold uppercase tracking-wider text-brand-limeDark block">
-              Section 06 &bull; Reaction
+              Section 05 &bull; Reaction
             </span>
             <h3 className="font-display font-bold text-heading-md text-ink">
               After he tried it.
