@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ordermind.onrender.com";
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ordermind-55yw.onrender.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
