@@ -341,13 +341,49 @@ export async function getOrderDetails(
   // Generate plain-English What Changed timeline
   const changes = detectOrderChanges(eventDocs);
 
-  const attachments = attachmentDocs.map((a: any) => ({
-    id: a._id.toString(),
-    filename: a.filename || "Attachment",
-    contentType: a.contentType || "application/octet-stream",
-    size: a.size || 0,
-    url: `/api/attachments/${a._id.toString()}`,
-  }));
+  // Also collect attachments attached to messages for this conversation
+  const messageAtts: any[] = [];
+  if (orderDoc.conversationId) {
+    const msgsWithAtts = await db.collection("messages").find({
+      workspaceId,
+      conversationId: orderDoc.conversationId,
+      "attachments.0": { $exists: true },
+    }).toArray();
+    for (const msg of msgsWithAtts) {
+      for (const att of (msg as any).attachments || []) {
+        messageAtts.push(att);
+      }
+    }
+  }
+
+  // Combine and deduplicate by id
+  const attMap = new Map<string, any>();
+  for (const a of attachmentDocs) {
+    const id = a._id ? a._id.toString() : a.id;
+    if (id) {
+      attMap.set(id, {
+        id,
+        filename: a.filename || "Attachment",
+        contentType: a.contentType || "application/octet-stream",
+        size: a.size || 0,
+        url: `/api/attachments/${id}`,
+      });
+    }
+  }
+  for (const a of messageAtts) {
+    const id = a._id ? a._id.toString() : a.id;
+    if (id && !attMap.has(id)) {
+      attMap.set(id, {
+        id,
+        filename: a.filename || "Attachment",
+        contentType: a.contentType || "application/octet-stream",
+        size: a.size || 0,
+        url: a.url || `/api/attachments/${id}`,
+      });
+    }
+  }
+
+  const attachments = Array.from(attMap.values());
 
   return {
     ...orderDoc,

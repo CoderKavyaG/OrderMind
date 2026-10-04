@@ -54,10 +54,16 @@ Requirements:
 - Warm, polite tone suitable for a packaging business estimator
 - Output strictly JSON: { "question": "..." }`;
 
-        const res = await llm.generateJSON<{ question: string }>({
-          prompt,
-          system: "Output strictly JSON with a 'question' string property.",
-        });
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("LLM draft timeout")), 1200)
+        );
+        const res = await Promise.race([
+          llm.generateJSON<{ question: string }>({
+            prompt,
+            system: "Output strictly JSON with a 'question' string property.",
+          }),
+          timeoutPromise,
+        ]);
 
         if (res?.question && typeof res.question === "string" && res.question.trim().length > 10) {
           return res.question.trim();
@@ -162,14 +168,14 @@ export async function handleAnswerReceived(
   const clarification = await db.collection<ClarificationDoc>("clarifications").findOne({
     _id: clarObjectId,
     workspaceId,
-    orderId,
   });
 
   if (!clarification) {
     throw new Error("Clarification record not found");
   }
 
-  const orderDetails = await getOrderDetails(workspaceId, orderId);
+  const resolvedOrderId = clarification.orderId || orderId;
+  const orderDetails = await getOrderDetails(workspaceId, resolvedOrderId);
   if (!orderDetails) {
     throw new Error("Order not found");
   }
@@ -198,56 +204,54 @@ export async function handleAnswerReceived(
     id: msgRes.insertedId.toString(),
   };
 
-  // 2. Fetch preceding messages for context
-  const preceding = await db
-    .collection("messages")
-    .find({ workspaceId, conversationId: orderDetails.conversationId })
-    .sort({ timestamp: 1 })
-    .toArray();
+  // 2. Deterministic guaranteed event for the exact answered clarification field
+  const directEvent = {
+    field: clarification.field,
+    value: customerReplyText.trim(),
+    op: "set" as const,
+    messageId: createdMessage.id,
+    quote: customerReplyText.trim(),
+    confidence: 1.0,
+    createdAt: new Date(),
+  };
 
-  const formattedPreceding = preceding
-    .filter((m) => m._id.toString() !== createdMessage.id)
-    .map((m) => ({ ...m, id: m._id.toString() }));
+  await db.collection("extracted_events").insertOne({
+    ...directEvent,
+    workspaceId,
+    conversationId: orderDetails.conversationId,
+    createdAt: new Date(),
+  });
 
-  // 3. Process new message through AI extraction pipeline
-  await processMessage(
-    createdMessage as any,
-    formattedPreceding as any,
-    workspaceId
+  // 3. Mark clarification as answered
+  await db.collection("clarifications").updateOne(
+    { _id: clarObjectId, workspaceId },
+    {
+      $set: {
+        status: "answered",
+        customerReply: customerReplyText.trim(),
+        answeredAt: new Date(),
+      },
+    }
   );
 
   // 4. Fetch all conversation events and sync to order
   const allEvents = await getConversationEvents(workspaceId, orderDetails.conversationId);
-  const updatedOrder = await syncExtractedEventsToOrder(
+  await syncExtractedEventsToOrder(
     workspaceId,
     orderDetails.conversationId,
     orderDetails.customerId,
     allEvents
   );
 
-  // 5. Check if the clarified field is now filled (not MISSING)
-  const currentFieldStatus = updatedOrder.reducedState.fields[clarification.field]?.status;
-  const isFilled = currentFieldStatus && currentFieldStatus !== "MISSING";
-
-  if (isFilled) {
-    await db.collection("clarifications").updateOne(
-      { _id: clarObjectId, workspaceId },
-      {
-        $set: {
-          status: "answered",
-          customerReply: customerReplyText.trim(),
-          answeredAt: new Date(),
-        },
-      }
-    );
-  }
+  // 5. Re-fetch order to return updated clarification list and reduced fields
+  const finalOrder = await getOrderDetails(workspaceId, resolvedOrderId);
 
   const updatedClarification = await db
     .collection<ClarificationDoc>("clarifications")
     .findOne({ _id: clarObjectId, workspaceId });
 
   return {
-    order: updatedOrder,
+    order: finalOrder || (orderDetails as OrderWithDetails),
     clarification: {
       ...updatedClarification!,
       id: updatedClarification!._id!.toString(),

@@ -203,10 +203,16 @@ Option A (${conflict.optionA.label}): ${conflict.optionA.value} (Quote: "${confl
 Option B (${conflict.optionB.label}): ${conflict.optionB.value} (Quote: "${conflict.optionB.quote || ""}")
 Explain the exact contradiction so an operator can resolve it.`;
 
-            const res = await provider.generateJSON<{ explanation: string }>({
-              prompt,
-              system: "Output strictly JSON with an 'explanation' string property.",
-            });
+            const timeoutPromise = new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error("LLM conflict explanation timeout")), 1200)
+            );
+            const res = await Promise.race([
+              provider.generateJSON<{ explanation: string }>({
+                prompt,
+                system: "Output strictly JSON with an 'explanation' string property.",
+              }),
+              timeoutPromise,
+            ]);
 
             if (res?.explanation && typeof res.explanation === "string" && res.explanation.length > 10) {
               conflict.explanation = res.explanation;

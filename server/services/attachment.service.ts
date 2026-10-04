@@ -160,7 +160,8 @@ export async function storeAttachment(
   buffer: Buffer,
   filename: string,
   contentType: string,
-  orderId?: string
+  orderId?: string,
+  conversationId?: string
 ): Promise<AttachmentMeta> {
   validateAttachment({ size: buffer.length, type: contentType, name: filename, buffer });
 
@@ -173,6 +174,7 @@ export async function storeAttachment(
     metadata: {
       workspaceId,
       orderId,
+      conversationId,
       contentType,
       uploadedAt: new Date(),
     },
@@ -195,6 +197,7 @@ export async function storeAttachment(
     contentType,
     size: buffer.length,
     orderId,
+    conversationId,
     uploadedAt: new Date(),
   };
 

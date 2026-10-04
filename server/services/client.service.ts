@@ -36,10 +36,38 @@ export async function listClients(
     .sort({ createdAt: -1 })
     .toArray();
 
-  return clients.map((c) => ({
-    ...c,
-    id: c._id ? c._id.toString() : "",
-  }));
+  const clientIds = clients.map((c) => (c._id ? c._id.toString() : "")).filter(Boolean);
+
+  // Compute real order metrics per customer from orders collection
+  const orders = clientIds.length > 0
+    ? await db
+        .collection("orders")
+        .find({ workspaceId, customerId: { $in: clientIds } })
+        .toArray()
+    : [];
+
+  const orderStatsByCustomer = new Map<string, { count: number; totalINR: number }>();
+  for (const ord of orders) {
+    const cid = ord.customerId?.toString();
+    if (!cid) continue;
+    const existing = orderStatsByCustomer.get(cid) || { count: 0, totalINR: 0 };
+    existing.count += 1;
+    // Calculate commercial value from quote if available, else 0
+    const quoteVal = (ord as any).quote?.totalINR || 0;
+    existing.totalINR += quoteVal;
+    orderStatsByCustomer.set(cid, existing);
+  }
+
+  return clients.map((c) => {
+    const id = c._id ? c._id.toString() : "";
+    const stats = orderStatsByCustomer.get(id);
+    return {
+      ...c,
+      id,
+      orderCount: stats?.count ?? (c as any).orderCount ?? 0,
+      lifetimeValue: stats?.totalINR ?? (c as any).lifetimeValue ?? 0,
+    };
+  });
 }
 
 export async function getClient(

@@ -215,6 +215,24 @@ export async function saveImportedConversation(
 
   await db.collection("messages").insertMany(messageDocs);
 
+  // Link any uploaded attachments to this conversationId so they appear everywhere
+  if (input.attachments && input.attachments.length > 0) {
+    const attObjectIds = input.attachments
+      .map((a) => a.attachment?.id)
+      .filter(Boolean)
+      .map((id) => {
+        try { return new ObjectId(id); } catch { return null; }
+      })
+      .filter((id): id is ObjectId => id !== null);
+
+    if (attObjectIds.length > 0) {
+      await db.collection("attachments").updateMany(
+        { _id: { $in: attObjectIds }, workspaceId },
+        { $set: { conversationId } }
+      );
+    }
+  }
+
   return {
     conversationId,
     messageCount: normalizedMessages.length,
@@ -283,6 +301,24 @@ export async function addMessageToConversation(
   };
 
   const insertResult = await db.collection("messages").insertOne(messageDoc);
+
+  // Link any attachments on this message to conversationId
+  if (input.attachments && input.attachments.length > 0) {
+    const attObjectIds = input.attachments
+      .map((a) => a.id)
+      .filter(Boolean)
+      .map((id) => {
+        try { return new ObjectId(id); } catch { return null; }
+      })
+      .filter((id): id is ObjectId => id !== null);
+
+    if (attObjectIds.length > 0) {
+      await db.collection("attachments").updateMany(
+        { _id: { $in: attObjectIds }, workspaceId },
+        { $set: { conversationId } }
+      );
+    }
+  }
 
   // Update conversation record
   await db.collection("conversations").updateOne(

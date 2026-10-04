@@ -79,6 +79,7 @@ export class GemmaProvider implements LLMProvider {
           messages,
           response_format: { type: "json_object" },
           temperature: 0.1,
+          max_tokens: 1024,
         };
 
     const res = await fetch(endpoint, {

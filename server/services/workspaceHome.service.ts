@@ -46,7 +46,20 @@ export interface UrgentAttentionItem {
   lifecycleStage: string;
   urgencyLevel: "critical" | "high" | "medium";
   urgencyScore: number;
-  reasonType: "overdue" | "conflict" | "missing_info" | "out_of_scope" | "awaiting_approval" | "awaiting_advance";
+  reasonType:
+    | "overdue"
+    | "conflict"
+    | "missing_info"
+    | "out_of_scope"
+    | "awaiting_approval"
+    | "awaiting_advance"
+    | "production"
+    | "deadline"
+    | "followup"
+    | "approval"
+    | "payment"
+    | "consultation"
+    | string;
   title: string;
   description: string;
   deadline?: string;
@@ -315,6 +328,35 @@ export async function getWorkspaceDashboardData(workspaceId: string): Promise<Wo
         actionLabel: "Record Advance",
       });
     }
+  }
+
+  // Check 6: Custom & Scheduled Packaging Tasks
+  for (const t of allTasks) {
+    if (t.done) continue;
+    const client = t.clientId ? clientMap.get(t.clientId) : undefined;
+    const order = t.orderId ? orderMap.get(t.orderId) : undefined;
+    const clientName = client?.name || (t.clientId ? "Client Task" : "Packaging Operations");
+    const orderNumber = order?.orderNumber || "Task";
+    const taskId = t._id ? t._id.toString() : (t.id || `task_${Date.now()}`);
+    const isPast = t.dueAt && new Date(t.dueAt) < startOfToday;
+
+    needsAttentionQueue.push({
+      id: taskId,
+      orderId: t.orderId || "",
+      orderNumber,
+      clientId: t.clientId || "",
+      clientName,
+      orderType: order?.orderType || "manufacturing",
+      lifecycleStage: order?.lifecycleStage || "Production",
+      urgencyLevel: isPast ? "critical" : "medium",
+      urgencyScore: isPast ? 95 : 65,
+      reasonType: t.type || "production",
+      title: t.title,
+      description: `Scheduled for ${t.dueAt ? new Date(t.dueAt).toLocaleDateString("en-IN") : "Today"}. Category: ${String(t.type || "TASK").toUpperCase()}`,
+      deadline: t.dueAt ? new Date(t.dueAt).toISOString().split("T")[0] : undefined,
+      actionUrl: t.orderId ? `/orders/${t.orderId}` : t.clientId ? `/customers` : `/workspace`,
+      actionLabel: t.orderId ? "Open Order" : "View Details",
+    });
   }
 
   // Sort queue by urgencyScore descending
