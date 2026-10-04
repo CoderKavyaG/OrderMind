@@ -2,8 +2,9 @@
 
 import React, { useState } from "react";
 import * as Sentry from "@sentry/nextjs";
-import { AlertTriangle, Bug, CheckCircle2, Server, ArrowLeft, ExternalLink, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Bug, CheckCircle2, Server, ArrowLeft, ExternalLink, ShieldCheck, Activity } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function SentryExamplePage() {
   const [serverStatus, setServerStatus] = useState<string | null>(null);
@@ -55,63 +56,75 @@ export default function SentryExamplePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-12">
-      <div className="max-w-3xl mx-auto space-y-8">
-        {/* Navigation */}
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-canvas text-ink p-6 md:p-12 font-sans selection:bg-brand-lime selection:text-ink">
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Navigation & Header Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border">
           <Link
             href="/workspace"
-            className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 transition-colors"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-ink-muted hover:text-ink transition-colors bg-surface px-3 py-1.5 rounded-lg border border-border shadow-soft w-fit"
           >
-            <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Workspace
           </Link>
+
           <a
             href="https://goelsahhab-workspace.sentry.io/issues/?project=javascript-nextjs"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-400 hover:text-emerald-300 underline underline-offset-4"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink bg-brand-lime hover:bg-brand-limeHover px-3 py-1.5 rounded-lg border border-brand-limeHover shadow-tactile transition-all w-fit"
           >
-            Open Sentry Dashboard <ExternalLink className="w-3.5 h-3.5" />
+            <span>Open Sentry Issues</span>
+            <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
 
-        {/* Header */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 md:p-8 space-y-4 shadow-xl">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20">
-              <Bug className="w-6 h-6" />
+        {/* Hero Card */}
+        <div className="bg-surface border border-border rounded-card p-6 md:p-8 space-y-6 shadow-soft">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-brand-lime text-ink flex items-center justify-center font-bold shadow-tactile border border-brand-limeHover shrink-0">
+              <Bug className="w-6 h-6 text-ink" />
             </div>
             <div>
-              <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white">
-                Sentry Next.js Verification
+              <span className="font-mono text-[11px] uppercase tracking-wider text-ink-muted font-semibold block">
+                Observability &amp; Distributed Tracing
+              </span>
+              <h1 className="text-xl md:text-2xl font-display font-extrabold text-ink tracking-tight mt-0.5">
+                Sentry Next.js Telemetry Verification
               </h1>
-              <p className="text-sm text-slate-400">
-                Workspace: <span className="text-slate-200 font-mono">goelsahhab-workspace</span> | Project:{" "}
-                <span className="text-slate-200 font-mono">javascript-nextjs</span>
+              <p className="text-body-xs text-ink-muted mt-1">
+                Workspace: <span className="font-mono font-semibold text-ink">goelsahhab-workspace</span> &bull; Project:{" "}
+                <span className="font-mono font-semibold text-ink">javascript-nextjs</span>
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-            <div className="p-3.5 bg-slate-950/60 rounded-xl border border-slate-800/80 flex items-center gap-3">
-              <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+            <div className="p-4 bg-surface-muted/50 rounded-xl border border-border flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-status-confirmedBg text-status-confirmed border border-status-confirmedBorder shrink-0">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
               <div className="text-xs">
-                <p className="font-semibold text-slate-200">Client Tracing SDK</p>
-                <p className="text-slate-400">@sentry/nextjs Active</p>
+                <p className="font-bold text-ink">Client Tracing SDK</p>
+                <p className="text-ink-muted font-mono text-[11px]">@sentry/nextjs Active (v11.4)</p>
               </div>
             </div>
-            <div className="p-3.5 bg-slate-950/60 rounded-xl border border-slate-800/80 flex items-center gap-3">
-              {dsnPresent ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-              ) : (
-                <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
-              )}
+
+            <div className="p-4 bg-surface-muted/50 rounded-xl border border-border flex items-center gap-3">
+              <div
+                className={`p-2 rounded-lg border shrink-0 ${
+                  dsnPresent
+                    ? "bg-status-confirmedBg text-status-confirmed border-status-confirmedBorder"
+                    : "bg-status-inferredBg text-status-inferred border-status-inferredBorder"
+                }`}
+              >
+                {dsnPresent ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+              </div>
               <div className="text-xs">
-                <p className="font-semibold text-slate-200">
-                  {dsnPresent ? "Sentry DSN Configured" : "DSN Ready"}
+                <p className="font-bold text-ink">
+                  {dsnPresent ? "Sentry DSN Configured" : "Awaiting DSN"}
                 </p>
-                <p className="text-slate-400">
-                  {dsnPresent ? "Capturing real-time telemetry" : "Awaiting NEXT_PUBLIC_SENTRY_DSN"}
+                <p className="text-ink-muted font-mono text-[11px]">
+                  {dsnPresent ? "Capturing real-time telemetry" : "Set NEXT_PUBLIC_SENTRY_DSN"}
                 </p>
               </div>
             </div>
@@ -119,66 +132,79 @@ export default function SentryExamplePage() {
         </div>
 
         {/* Action Panel */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 md:p-8 space-y-6">
-          <h2 className="text-base font-semibold text-slate-200 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-amber-400" />
-            Trigger Test Diagnostics
-          </h2>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Click any of the test buttons below to trigger an error. Sentry will capture the stack trace, metadata,
-            and route context and display them in your Sentry Issues dashboard.
+        <div className="bg-surface border border-border rounded-card p-6 md:p-8 space-y-6 shadow-soft">
+          <div className="flex items-center gap-2 text-body-sm font-display font-bold text-ink">
+            <Activity className="w-4 h-4 text-brand-lime" />
+            <span>Trigger Diagnostic Events</span>
+          </div>
+
+          <p className="text-body-xs text-ink-muted leading-relaxed font-sans">
+            Exercise any of the test buttons below to emit a real diagnostic event. Sentry records the stack trace,
+            route parameters, browser details, and environment context directly to your dashboard.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-            {/* Unhandled Error Button */}
-            <div className="p-4 bg-slate-950/70 border border-slate-800 rounded-xl space-y-3 flex flex-col justify-between">
+            {/* 1. Unhandled Error */}
+            <div className="p-5 bg-surface-muted/30 border border-border rounded-xl space-y-3 flex flex-col justify-between">
               <div>
-                <p className="text-sm font-semibold text-rose-400">1. Unhandled Client Error</p>
-                <p className="text-xs text-slate-400 mt-1">
-                  Calls <code className="text-rose-300 bg-rose-950/50 px-1 py-0.5 rounded">myUndefinedFunction()</code> directly.
+                <span className="font-mono text-[10px] uppercase font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 block w-fit mb-2">
+                  Test 1
+                </span>
+                <p className="text-sm font-bold text-ink">Unhandled Crash</p>
+                <p className="text-xs text-ink-muted mt-1 leading-relaxed">
+                  Directly calls <code className="font-mono text-rose-700 bg-rose-50 px-1 py-0.5 rounded">myUndefinedFunction()</code> to test global error boundary.
                 </p>
               </div>
+
               <button
                 type="button"
                 onClick={triggerUnhandledError}
-                className="w-full py-2.5 px-3 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 rounded-lg text-xs font-semibold transition"
+                className="w-full py-2 px-3 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition shadow-tactile"
               >
                 Break Client (Crash)
               </button>
             </div>
 
-            {/* Handled Exception Button */}
-            <div className="p-4 bg-slate-950/70 border border-slate-800 rounded-xl space-y-3 flex flex-col justify-between">
+            {/* 2. Handled Sentry Event */}
+            <div className="p-5 bg-surface-muted/30 border border-border rounded-xl space-y-3 flex flex-col justify-between">
               <div>
-                <p className="text-sm font-semibold text-purple-400">2. Handled Sentry Event</p>
-                <p className="text-xs text-slate-400 mt-1">
-                  Invokes <code className="text-purple-300 bg-purple-950/50 px-1 py-0.5 rounded">Sentry.captureException</code> with custom tags.
+                <span className="font-mono text-[10px] uppercase font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 block w-fit mb-2">
+                  Test 2
+                </span>
+                <p className="text-sm font-bold text-ink">Handled Exception</p>
+                <p className="text-xs text-ink-muted mt-1 leading-relaxed">
+                  Dispatches <code className="font-mono text-purple-700 bg-purple-50 px-1 py-0.5 rounded">Sentry.captureException</code> with custom tags &amp; metadata.
                 </p>
               </div>
+
               <button
                 type="button"
                 onClick={triggerHandledError}
-                className="w-full py-2.5 px-3 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 rounded-lg text-xs font-semibold transition"
+                className="w-full py-2 px-3 bg-brand-lime hover:bg-brand-limeHover text-ink border border-brand-limeHover rounded-lg text-xs font-bold transition shadow-tactile"
               >
                 Capture Handled Error
               </button>
             </div>
 
-            {/* Server-Side Error Button */}
-            <div className="p-4 bg-slate-950/70 border border-slate-800 rounded-xl space-y-3 flex flex-col justify-between">
+            {/* 3. Server API Error */}
+            <div className="p-5 bg-surface-muted/30 border border-border rounded-xl space-y-3 flex flex-col justify-between">
               <div>
-                <p className="text-sm font-semibold text-blue-400 flex items-center gap-1.5">
-                  <Server className="w-3.5 h-3.5" /> 3. Server API Error
+                <span className="font-mono text-[10px] uppercase font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 block w-fit mb-2">
+                  Test 3
+                </span>
+                <p className="text-sm font-bold text-ink flex items-center gap-1.5">
+                  <Server className="w-3.5 h-3.5 text-blue-600" /> Server API Route
                 </p>
-                <p className="text-xs text-slate-400 mt-1">
-                  Hits <code className="text-blue-300 bg-blue-950/50 px-1 py-0.5 rounded">/api/sentry-test</code> server route.
+                <p className="text-xs text-ink-muted mt-1 leading-relaxed">
+                  Calls <code className="font-mono text-blue-700 bg-blue-50 px-1 py-0.5 rounded">/api/sentry-test</code> to test server runtime error capture.
                 </p>
               </div>
+
               <button
                 type="button"
                 disabled={loadingServer}
                 onClick={triggerServerError}
-                className="w-full py-2.5 px-3 bg-blue-600/20 hover:bg-blue-600/30 disabled:opacity-50 text-blue-300 border border-blue-500/30 rounded-lg text-xs font-semibold transition"
+                className="w-full py-2 px-3 bg-surface hover:bg-surface-muted disabled:opacity-50 text-ink border border-border rounded-lg text-xs font-bold transition shadow-tactile"
               >
                 {loadingServer ? "Testing Server..." : "Trigger Server Error"}
               </button>
@@ -186,8 +212,9 @@ export default function SentryExamplePage() {
           </div>
 
           {serverStatus && (
-            <div className="p-3.5 bg-slate-950 rounded-xl border border-blue-500/30 text-xs font-mono text-blue-300">
-              {serverStatus}
+            <div className="p-4 bg-surface-muted/70 rounded-xl border border-border text-xs font-mono text-ink space-y-1">
+              <span className="font-bold text-ink-muted uppercase text-[10px] block">Server Response:</span>
+              <p>{serverStatus}</p>
             </div>
           )}
         </div>

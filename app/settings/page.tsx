@@ -24,6 +24,9 @@ import {
   Mail,
   Phone,
   UserPlus,
+  Activity,
+  ArrowRight,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -984,6 +987,54 @@ export default function SettingsPage() {
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+
+            {/* Sentry & Observability Diagnostics */}
+            <div className="p-6 rounded-card border border-border bg-surface shadow-soft space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
+                <div>
+                  <h3 className="text-body-xs font-display font-bold text-ink flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-brand-lime" />
+                    <span>Observability &amp; Sentry Diagnostics</span>
+                  </h3>
+                  <p className="text-[11px] text-ink-muted mt-0.5">
+                    Distributed error tracing, Gemma AI pipeline telemetry, and system health status.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href="/sentry-example-page"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-lime hover:bg-brand-limeHover text-ink font-bold text-xs shadow-tactile transition"
+                  >
+                    <span>Test Diagnostic Page</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                  <a
+                    href="https://goelsahhab-workspace.sentry.io/issues/?project=javascript-nextjs"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-surface hover:bg-surface-muted text-ink font-semibold text-xs shadow-soft transition"
+                  >
+                    <span>Sentry Issues</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-ink-muted" />
+                  </a>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 bg-surface-muted/50 rounded-xl border border-border">
+                  <span className="text-[10px] font-mono text-ink-muted uppercase block">Workspace</span>
+                  <span className="font-semibold text-ink font-mono text-xs">goelsahhab-workspace</span>
+                </div>
+                <div className="p-3 bg-surface-muted/50 rounded-xl border border-border">
+                  <span className="text-[10px] font-mono text-ink-muted uppercase block">Sentry Project</span>
+                  <span className="font-semibold text-ink font-mono text-xs">javascript-nextjs</span>
+                </div>
+                <div className="p-3 bg-surface-muted/50 rounded-xl border border-border">
+                  <span className="text-[10px] font-mono text-ink-muted uppercase block">Agent Tracing</span>
+                  <span className="font-semibold text-emerald-700 font-mono text-xs">Active (@sentry/nextjs)</span>
+                </div>
               </div>
             </div>
           </div>

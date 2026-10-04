@@ -15,6 +15,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/api/public") ||
     pathname.startsWith("/brand") ||
     pathname === "/favicon.ico" ||
+    pathname === "/favicon.svg" ||
+    pathname === "/icon.svg" ||
     /\.(jpg|jpeg|png|gif|webp|svg|ico|css|js)$/i.test(pathname)
   ) {
     return NextResponse.next();
@@ -30,9 +32,18 @@ export async function middleware(request: NextRequest) {
     pathname === "/how-we-built" ||
     pathname === "/api/auth/login" ||
     pathname === "/api/auth/signup" ||
-    pathname === "/api/health" ||
-    pathname === "/api/sentry-test" ||
-    pathname === "/sentry-example-page";
+    pathname === "/api/health";
+
+  const isKnownProtectedRoute =
+    pathname.startsWith("/workspace") ||
+    pathname.startsWith("/inbox") ||
+    pathname.startsWith("/orders") ||
+    pathname.startsWith("/customers") ||
+    pathname.startsWith("/channels") ||
+    pathname.startsWith("/memory") ||
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/onboarding") ||
+    pathname.startsWith("/sentry-example-page");
 
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
   let isAuthenticated = false;
@@ -46,19 +57,27 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Redirect unauthenticated requests to /login
-  if (!isAuthenticated && !isPublicAuthRoute) {
-    if (pathname.startsWith("/api/")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("from", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
   // If already authenticated and trying to access login/signup, redirect to workspace
   if (isAuthenticated && (pathname === "/login" || pathname === "/signup")) {
     return NextResponse.redirect(new URL("/workspace", request.url));
+  }
+
+  // If not authenticated:
+  if (!isAuthenticated && !isPublicAuthRoute) {
+    // 1. API routes return 401
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 2. Known protected pages require login
+    if (isKnownProtectedRoute) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("from", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // 3. Unlisted / non-existent pages pass through so Next.js renders branded app/not-found.tsx
+    return NextResponse.next();
   }
 
   return NextResponse.next();
