@@ -28,7 +28,7 @@ let isSentryInitialized = false;
 export function initSentryIfConfigured() {
   if (isSentryInitialized) return;
 
-  const dsn = process.env.SENTRY_DSN;
+  const dsn = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
   if (dsn && dsn.trim()) {
     try {
       Sentry.init({
@@ -53,7 +53,7 @@ export function initSentryIfConfigured() {
 initSentryIfConfigured();
 
 export function isSentryActive(): boolean {
-  return isSentryInitialized && Boolean(process.env.SENTRY_DSN);
+  return isSentryInitialized && Boolean((process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN)?.trim());
 }
 
 export function getRecentTraces(limit: number = 20): TraceRecord[] {

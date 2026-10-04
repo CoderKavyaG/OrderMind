@@ -1,0 +1,15 @@
+import * as Sentry from "@sentry/nextjs";
+
+const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN;
+
+if (SENTRY_DSN && SENTRY_DSN.trim()) {
+  Sentry.init({
+    dsn: SENTRY_DSN.trim(),
+    tracesSampleRate: 1.0,
+    // Enable session replay when DSN is present
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+    environment: process.env.NODE_ENV || "development",
+    debug: false,
+  });
+}

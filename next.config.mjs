@@ -1,3 +1,5 @@
+import { withSentryConfig } from "@sentry/nextjs/config";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -35,5 +37,22 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+const isSentryConfigured = Boolean(
+  (process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN)?.trim()
+);
 
+export default isSentryConfigured
+  ? withSentryConfig(nextConfig, {
+      // Sentry Build Options
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      silent: true,
+      widenClientFileUpload: true,
+      hideSourceMaps: true,
+      disableLogger: true,
+      telemetry: false,
+      sourcemaps: {
+        disable: !process.env.SENTRY_AUTH_TOKEN,
+      },
+    })
+  : nextConfig;

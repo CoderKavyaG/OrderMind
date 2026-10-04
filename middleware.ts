@@ -30,7 +30,8 @@ export async function middleware(request: NextRequest) {
     pathname === "/how-we-built" ||
     pathname === "/api/auth/login" ||
     pathname === "/api/auth/signup" ||
-    pathname === "/api/health";
+    pathname === "/api/health" ||
+    pathname === "/api/sentry-test";
 
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
   let isAuthenticated = false;
